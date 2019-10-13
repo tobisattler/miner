@@ -15,12 +15,21 @@ struct MiningJob: Codable {
 }
 
 struct BlockHeader: Codable {
-    let version: Int32
+    let version: UInt32
     // Hex encoded as String
     let prevBlockHash: String
     // Hex encoded as String
     let merkleRoot: String
-    let timestamp: Int32
-    let difficultyTarget: Int32
-    let nonce: Int
+    let timestamp: UInt32
+    let nbits: UInt32
+    let difficultyTarget: Int
+    let nonce: UInt32
+}
+
+struct WorkResult: Codable {
+    let jobId: Int
+    let clientId: Int
+    let solutionFound: Bool
+    let nonce: UInt32?
+    let blockHash: String?
 }

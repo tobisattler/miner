@@ -10,4 +10,5 @@ import Foundation
 
 protocol ServerConnectorObserver {
     func miningJobResponse(response: MiningJob)
+    func jobResultResonse()
 }

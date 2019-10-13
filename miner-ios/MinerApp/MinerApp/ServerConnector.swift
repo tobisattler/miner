@@ -22,6 +22,12 @@ class ServerConnector {
         }
     }
     
+    func notifyJobResultResponse() {
+        for observer in observers {
+            observer.jobResultResonse()
+        }
+    }
+    
     static let shared = ServerConnector()
     
     private init() {}
@@ -29,7 +35,7 @@ class ServerConnector {
     func requestMiningJob() {
         let configuration = URLSessionConfiguration.default
         let session = URLSession(configuration: configuration)
-        let url = URL(string: "https://mining.sattler.cool/work")
+        let url = URL(string: "https://mining.sattler.cool/v1/work")
         var request:URLRequest = URLRequest(url: url!)
         request.httpMethod = "GET"
         
@@ -41,11 +47,12 @@ class ServerConnector {
             }
             switch (httpResponse.statusCode) {
             case 200: //success response.
-                let jsonDecoder: JSONDecoder = JSONDecoder()
+                let jsonDecoder = JSONDecoder()
                 do {
                     let miningJob: MiningJob = try jsonDecoder.decode(MiningJob.self, from: receivedData)
                     self.notifyMiningJob(miningJob: miningJob)
                 } catch let error {
+                    // TODO handle error
                     print(error)
                 }
                 
@@ -56,6 +63,47 @@ class ServerConnector {
                 break
             }
         }
+        dataTask.resume()
+    }
+    
+    func sendMiningResponse(workResult: WorkResult) {
+        let jsonEncoder = JSONEncoder()
+        var data: Data?
+        do {
+            data = try jsonEncoder.encode(workResult)
+        } catch let error {
+            // TODO handle error
+            print(error)
+            return
+        }
+        
+        let configuration = URLSessionConfiguration.default
+        let session = URLSession(configuration: configuration)
+        let url = URL(string: "https://mining.sattler.cool/v1/submit")
+        var request:URLRequest = URLRequest(url: url!)
+        request.httpMethod = "POST"
+        request.httpBody = data!
+        
+        let dataTask = session.dataTask(with: request) { data,response,error in
+            guard let httpResponse = response as? HTTPURLResponse
+                else {
+                    print("error: not a valid http response")
+                    return
+            }
+            switch (httpResponse.statusCode) {
+            case 200: //success response.
+                
+                self.notifyJobResultResponse()
+                
+                break
+            case 400:
+                break
+            default:
+                print("httpResponse.statusCode: \(httpResponse.statusCode) message: \(String(data: data!, encoding: .utf8)!)")
+                break
+            }
+        }
+        
         dataTask.resume()
     }
 }
