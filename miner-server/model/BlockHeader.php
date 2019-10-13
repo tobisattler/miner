@@ -12,9 +12,10 @@ class BlockHeader implements iModelClass {
     private $merkleRoot;
     private $timestamp;
     private $difficultyTarget;
+    private $nbits;
     private $nonce;
     
-    public function __construct($version, $prevBlockHash, $merkleRoot, $timestamp, $difficultyTarget, $nonce) {
+    public function __construct($version, $prevBlockHash, $merkleRoot, $timestamp, $difficultyTarget, $nbits, $nonce) {
         $this->version = $version;
         $this->prevBlockHash = $prevBlockHash;
         $this->merkleRoot = $merkleRoot;
@@ -22,6 +23,7 @@ class BlockHeader implements iModelClass {
         $this->merkleRoot = $merkleRoot;
         $this->timestamp = $timestamp;
         $this->difficultyTarget = $difficultyTarget;
+        $this->nbits = $nbits;
         $this->nonce = $nonce;
     }
     
