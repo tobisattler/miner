@@ -12,6 +12,8 @@ struct MiningJob: Codable {
     let jobId: Int
     let clientId: Int
     let blockHeader: BlockHeader
+    let startNonce: UInt32
+    let endNonce: UInt32
 }
 
 struct BlockHeader: Codable {
@@ -23,7 +25,6 @@ struct BlockHeader: Codable {
     let timestamp: UInt32
     let nbits: UInt32
     let difficultyTarget: Int
-    let nonce: UInt32
 }
 
 struct WorkResult: Codable {

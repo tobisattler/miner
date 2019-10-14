@@ -46,7 +46,6 @@ class ViewController: UIViewController, ServerConnectorObserver {
         // Encode UInt32 values into data object
         let versionData = blockHeader.version.data()
         let timeStampData = blockHeader.timestamp.data()
-        let nonceData = blockHeader.nonce.data()
         let nbitsData = blockHeader.nbits.data()
         
         // Encode Hex String for prevBlockHash and merkleRoot as data object. The byte order is being reversed to match the internal byte order of the Bitcoin header.
@@ -64,17 +63,20 @@ class ViewController: UIViewController, ServerConnectorObserver {
         
         var resultNonce: UInt32?
         var resultHashHex: String?
-        for n in UInt32.min...100000 {
+        for n in miningJob.startNonce...miningJob.endNonce {
             let headerCopy = NSMutableData()
             headerCopy.setData(headerData as Data)
             headerCopy.append(n.data())
             
             // Perform two rounds of sha265 hashes, using Apple CryptoKit
-            let secondRoundDigest = SHA256.hash(data: SHA256.hash(data: headerData).suffix(SHA256Digest.byteCount))
+            let secondRoundDigest = SHA256.hash(data: SHA256.hash(data: headerCopy).suffix(SHA256Digest.byteCount))
             
-            // Check whether the digest has enough leading zero bits (represented at the end in the bitcoin header format
-            let leadingBitsData = secondRoundDigest.suffix(blockHeader.difficultyTarget)
-            if let maxValue = leadingBitsData.max(), maxValue == 0 {
+            // TODO: REMOVE DEBUGGING
+            //let currentHex = Data(secondRoundDigest.reversed()).hexEncodedString()
+            
+            // Check whether the digest has enough leading zero bytes (represented at the end in the bitcoin header format
+            let leadingBytesData = secondRoundDigest.suffix(blockHeader.difficultyTarget)
+            if let maxValue = leadingBytesData.max(), maxValue == 0 {
                 resultNonce = n
                 resultHashHex = Data(secondRoundDigest.reversed()).hexEncodedString()
                 break;
