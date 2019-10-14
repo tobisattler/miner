@@ -10,17 +10,24 @@ class MiningJob implements iModelClass {
     private $jobId;
     private $clientId;
     private $blockHeader;
+    private $startNonce;
+    private $endNonce;
     
     /**
+     * /**
      * Creates a new MiningJob Object
      * @param int $jobId
      * @param int $clientId
      * @param BlockHeader $blockHeader
+     * @param int $startNonce
+     * @param int $endNonce
      */
-    public function __construct($jobId, $clientId, $blockHeader) {
+    public function __construct($jobId, $clientId, $blockHeader, $startNonce, $endNonce) {
         $this->jobId = $jobId;
         $this->clientId = $clientId;
         $this->blockHeader = $blockHeader;
+        $this->startNonce = $startNonce;
+        $this->endNonce = $endNonce;
     }
     
     /**

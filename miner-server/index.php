@@ -1,7 +1,16 @@
 <?php
 
-require_once 'ApiController.php';
-require_once 'WorkController.php';
+use controller\WorkController;
+use controller\RegistrationController;
+use controller\SubmitController;
+
+require_once 'Config.php';
+require_once 'external/Medoo.php';
+require_once 'controller/ApiController.php';
+require_once 'controller/AuthenticationController.php';
+require_once 'controller/WorkController.php';
+require_once 'controller/SubmitController.php';
+require_once 'controller/RegistrationController.php';
 
 
 // Get the request url
@@ -35,8 +44,12 @@ switch($urlParts[0]) {
                 $workController->getWork();
                 break;
             case 'submit':
-                header('HTTP/1.0 200 OK');
-                exit();
+                $submitController = new SubmitController();
+                $submitController->submitWork();
+                break;
+            case 'register':
+                $registrationController = new RegistrationController();
+                $registrationController->registerClient();
                 break;
             default:
                 // endpoint not defined. Respond with 404

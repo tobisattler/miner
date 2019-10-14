@@ -2,7 +2,10 @@
 namespace model;
 
 /**
- * Data model for BlockHeader
+ * Data model for BlockHeader blueprint, that is sent to the mining client for calculation
+ * Note: This blueprint for the BlockHeader does not contain the nonce, as the nonce needs to be
+ * changed by the miners to solve the puzzle.
+ * 
  * @author Tobias Sattler
  *
  */
@@ -13,18 +16,26 @@ class BlockHeader implements iModelClass {
     private $timestamp;
     private $difficultyTarget;
     private $nbits;
-    private $nonce;
     
-    public function __construct($version, $prevBlockHash, $merkleRoot, $timestamp, $difficultyTarget, $nbits, $nonce) {
+    /**
+     * Creates a new BlockHeader blueprint for calculation by the mining client
+     * @param int $version
+     * @param string $prevBlockHash
+     * @param string $merkleRoot
+     * @param int $timestamp
+     * @param int $difficultyTarget
+     * @param int $nbits
+     */
+    public function __construct($version, $prevBlockHash, $merkleRoot, $timestamp, $difficultyTarget, $nbits) {
         $this->version = $version;
         $this->prevBlockHash = $prevBlockHash;
         $this->merkleRoot = $merkleRoot;
         $this->timestamp = $timestamp;
         $this->merkleRoot = $merkleRoot;
         $this->timestamp = $timestamp;
+        // difficultyTarget defines how many of the leading Bytes need to be zero to be accepted
         $this->difficultyTarget = $difficultyTarget;
         $this->nbits = $nbits;
-        $this->nonce = $nonce;
     }
     
     /**
@@ -42,8 +53,6 @@ class BlockHeader implements iModelClass {
      */
     public function toArray() {
         $array = get_object_vars($this);
-        $array["prevBlockHash"] = bin2hex($this->prevBlockHash);
-        $array["merkleRoot"] = bin2hex($this->merkleRoot);
         return $array;
     }
 }
