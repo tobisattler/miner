@@ -9,6 +9,8 @@ class RegistrationController extends ApiController
 {  
     
     public function registerClient() {
+        // TODO: Check for hash collision
+        
         // generate API token for the new client
         $token = hash("sha256", microtime() . rand());
         
