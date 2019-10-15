@@ -12,9 +12,15 @@ require_once 'external/Medoo.php';
  *
  */
 class ApiController {
-    //stores the Medoo database connection object
+    /**
+     * stores the Medoo database connection object
+     * @var Medoo
+     */
     protected $database;
     
+    /**
+     * Constructor of ApiController. Establishes the database connection.
+     */
     public function __construct() {
         $this->database = new Medoo([
             "database_type" => "mysql",
@@ -27,7 +33,7 @@ class ApiController {
     
     /**
      * sends the json-string in $json back to the client
-     * @param String $json
+     * @param String $json JSON-encoded data that the client requested.
      */
     public function sendJSONResponse($json) {
         header('HTTP/1.0 200 OK');
@@ -36,12 +42,30 @@ class ApiController {
         exit();
     }
     
+    /**
+     * Returns a 400 error code to the client with customizable text
+     * @param string $errorText description of the error
+     */
+    public function exitWith400Error($errorText) {
+        http_response_code(400);
+        echo $errorText;
+        exit();
+    }
+    
+    /**
+     * Returns a 404 error code to the client with customizable text
+     * @param string $errorText description of the error
+     */
     public function exitWith404Error($errorText) {
         http_response_code(404);
         echo $errorText;
         exit();
     }
     
+    /**
+     * Returns a 403 error code to the client with customizable text 
+     * @param string $errorText description of the error
+     */
     public function exitWith403Error($errorText) {
         http_response_code(403);
         echo $errorText;

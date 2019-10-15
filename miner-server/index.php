@@ -23,13 +23,15 @@ switch($_SERVER['REQUEST_METHOD']) {
         break;
     default:
         $url = '';
-        http_response_code(404);
+        // the user has used an unsupported request method. send an error.
+        http_response_code(400);
         echo 'Undefined request method: ' . $_SERVER['REQUEST_METHOD'];
         exit();
 }
 
 $urlParts = explode("/", $url);
 if (sizeof($urlParts) != 2) {
+    // url is not in the supposed format. Send a 404 error
     http_response_code(404);
     echo 'URL does not match the expected format: ' . $url;
     exit();

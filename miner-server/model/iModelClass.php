@@ -9,7 +9,14 @@ namespace model;
 interface iModelClass
 {
 
+    /**
+     * returns the object as json-string
+     */
     public function toJSON();
+    
+    /**
+     * returns the object as array
+     */
     public function toArray();
     
 }

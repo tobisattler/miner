@@ -7,20 +7,43 @@ namespace model;
  *
  */
 class MiningJob implements iModelClass {
+    /**
+     * id of the job
+     * @var int
+     */
     private $jobId;
+    
+    /**
+     * id of the client, the job is meant for
+     * @var int
+     */
     private $clientId;
+    
+    /**
+     * BlockHeader for the job
+     * @var BlockHeader
+     */
     private $blockHeader;
+    
+    /**
+     * first nonce, that the miner should process
+     * @var int
+     */
     private $startNonce;
+    
+    /**
+     * last nonce, that the miner should process
+     * @var int
+     */
     private $endNonce;
     
     /**
-     * /**
      * Creates a new MiningJob Object
-     * @param int $jobId
-     * @param int $clientId
-     * @param BlockHeader $blockHeader
-     * @param int $startNonce
-     * @param int $endNonce
+     * @param int $jobId id of the job
+     * @param int $clientId id of the client that the job is created for
+     * @param BlockHeader $blockHeader BlockHeader of the job
+     * @param int $startNonce first nonce, that the miner should process
+     * @param int $endNonce last nonce, that the miner should process
      */
     public function __construct($jobId, $clientId, $blockHeader, $startNonce, $endNonce) {
         $this->jobId = $jobId;
@@ -32,7 +55,7 @@ class MiningJob implements iModelClass {
     
     /**
      * Returns the MiningJob Object as JSON string
-     * @return string
+     * @return string json-encoded version of the MiningJob object
      */
     public function toJSON() {
         $array = $this->toArray();
@@ -41,7 +64,7 @@ class MiningJob implements iModelClass {
     
     /**
      * Returns the MiningJob Object as Array
-     * @return array
+     * @return array array version of the MiningJob object
      */
     public function toArray() {
         $array = get_object_vars($this);

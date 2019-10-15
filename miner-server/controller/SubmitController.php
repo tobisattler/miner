@@ -2,15 +2,25 @@
 namespace controller;
 use Config;
 
+/**
+ * Controller, that is being used to process the submitted work results of the miners.
+ * @author Tobias Sattler
+ *
+ */
 class SubmitController extends AuthenticationController
 {
+    /**
+     * Function that is being called by the index.php file in order to process the submitted work results
+     */
     public function submitWork() {
           
+        // get the json data that was sent by the client
         $content = trim(file_get_contents("php://input"));
         $jsonData = json_decode($content, true);
         
+        // if the data is not in a valid json format, exit with an error.
         if (!is_array($jsonData)) {
-            $this->exitWith404Error("submitted work result is no json data");
+            $this->exitWith400Error("submitted work result is no json data");
         }
         
         $jobId = $jsonData["jobId"];

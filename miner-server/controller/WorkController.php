@@ -15,6 +15,10 @@ require_once 'model/MiningJob.php';
  *
  */
 class WorkController extends AuthenticationController {
+    
+    /**
+     * getWork is being called by the index.php file to process requests for work data
+     */
     public function getWork() {
         
         // Get the latest puzzle (with highest puzzleId)
@@ -121,10 +125,11 @@ class WorkController extends AuthenticationController {
             
         }
         
+        // check if a new MiningJob has been successfully created in the code above. If that's the case, send it to the client. Otherwise send error to the client.
         if ($miningJob !== null) {
             $this->sendJSONResponse($miningJob->toJSON());
         } else {
-            $this->exitWith404Error("unable to create new Job. Sorry!");
+            $this->exitWith500Error("unable to create new Job. Sorry!");
         }
 
     }
@@ -135,10 +140,10 @@ class WorkController extends AuthenticationController {
      */
     private function createPuzzleFromBlockchain() {
         
-        // get info, which block was the last mined. Escpecially the URL for data regarding the last block is needed.
+        // get info, which block was the last mined in the Bitcoin Blockchain. Escpecially the URL for data regarding the last block is needed.
         $blockChainInfo = $this->loadJSONFromURL("https://api.blockcypher.com/v1/btc/main");
         
-        if (!isset($blockChainInfo["previous_hash"]) || !isset($blockChainInfo["latest_url"])) {
+        if (!isset($blockChainInfo["latest_url"])) {
             // something went wrong getting the latest data from the blockchain.
             // return false instead of data, so that fallback can be used.
             return false;
@@ -166,7 +171,7 @@ class WorkController extends AuthenticationController {
         $nonce = $latestBlockHeader["nonce"];
         $version = $latestBlockHeader["ver"];
         
-        // calculate difficulty - count leading zeros of hash and convert into numbers of leading bytes
+        // calculate difficulty for the puzzle - count leading zeros of hash and convert into numbers of leading bytes
         $hashArray = str_split($hash);
         $count = 0;
         foreach($hashArray as $character) {
@@ -194,6 +199,10 @@ class WorkController extends AuthenticationController {
         return array("puzzleId" => $id, "puzzleHeader" => $puzzleHeader);
     }
     
+    /**
+     * creates a fallback puzzle. Fallback puzzles are created by duplicating already solved puzzles.
+     * @return \model\BlockHeader[]|number[] array containing the puzzleId of the new puzzle (key: puzzleId) and the BlockHeader for the new puzzle (key: puzzleHeader)
+     */
     private function createFallbackPuzzle() {
         // get a random old puzzle from the database
         $puzzlesToRecycle = $this->database->rand(Config::TABLE_PUZZLES, [
@@ -207,6 +216,7 @@ class WorkController extends AuthenticationController {
             "difficultyTarget [Int]"
         ]);
         
+        // if there is no puzzle to recycle, return an error to the client
         if (!is_array($puzzlesToRecycle) || !isset($puzzlesToRecycle[0])) {
             $this->exitWith500Error("Could not create new puzzle.");
         }
@@ -239,9 +249,15 @@ class WorkController extends AuthenticationController {
         return array("puzzleId" => $id, "puzzleHeader" => $puzzleHeader);
     }
     
+    /**
+     * Create a new puzzle. At first it will try to get the latest mined block header from the Bitcoin Blockchain.
+     * If that fails, a Fallback puzzle will be created
+     * @return \model\BlockHeader[]|number[] array containing the puzzleId of the new puzzle (key: puzzleId) and the BlockHeader for the new puzzle (key: puzzleHeader)
+     */
     private function createPuzzle() {
         $puzzle = $this->createPuzzleFromBlockchain();
         
+        // check if puzzle creation failed. In that case, create fallback puzzle
         if ($puzzle === false) {
             $puzzle = $this->createFallbackPuzzle();
         }
@@ -254,8 +270,17 @@ class WorkController extends AuthenticationController {
         return $puzzle;
     }
     
+    /**
+     * Create a new MiningJob with the given data
+     * @param BlockHeader $blockHeader BlockHeader data for of the new job
+     * @param int $puzzleId id of the new puzzle
+     * @param int $startNonce first nonce, that the client should use for mining purposes
+     * @return \model\MiningJob the newly created MiningJob
+     */
     private function createMiningJob($blockHeader, $puzzleId, $startNonce) {
+        // calculate the highest nonce, the client should calculate in this job
         $endNonce = $startNonce + Config::NONCES_PER_JOB - 1;
+        
         // make sure, that $endNonce is not higher than the highest possible nonce. If so, set it to highest possible nonce.
         if ($endNonce > Config::NONCE_MAX_VALUE) {
             $endNonce = Config::NONCE_MAX_VALUE;
@@ -277,7 +302,16 @@ class WorkController extends AuthenticationController {
         return $miningJob;
     }
     
+    /**
+     * Duplicates a job for the given puzzleId that already exists in the database.
+     * This is used when all nonce values have already been distributed to the clients, but the puzzle is not yet solved.
+     * The client will then get a duplicate of a job that another user already has gotten (and not yet finished).
+     * @param int $puzzleId
+     * @param BlockHeader $blockHeader
+     * @return \model\MiningJob the duplicated MiningJob
+     */
     private function duplicateRandomUnfinishedOpenJob($puzzleId, $blockHeader) {
+        // get a random not yet finished mining job from the database
         $jobs = $this->database->rand(Config::TABLE_JOBS,[
             "jobId [Int]",
             "clientId [Int]",
@@ -313,6 +347,8 @@ class WorkController extends AuthenticationController {
         
     /**
      * loads the defined $url and returns the result as json
+     * @param string $url url that should be loaded to retrieve json data
+     * @return mixed decoded json-data
      */
     private function loadJSONfromURL($url) {
         $ch = curl_init();
