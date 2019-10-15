@@ -43,6 +43,9 @@ class ViewController: UIViewController, ServerConnectorDelegate {
         ServerConnector.shared.requestMiningJob(token: self.token!)
     }
     
+    /**
+     Prevent rotation of the UI when the phone rotates
+     */
     override open var shouldAutorotate: Bool {
         return false
     }
