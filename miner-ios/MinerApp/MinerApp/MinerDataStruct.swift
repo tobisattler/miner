@@ -8,6 +8,9 @@
 
 import Foundation
 
+/**
+ Struct for mining jobs, received by the server.
+ */
 struct MiningJob: Codable {
     let jobId: Int
     let clientId: Int
@@ -16,6 +19,9 @@ struct MiningJob: Codable {
     let endNonce: UInt32
 }
 
+/**
+ Struct for BlockHeaders received by the server.
+ */
 struct BlockHeader: Codable {
     let version: UInt32
     // Hex encoded as String
@@ -27,6 +33,9 @@ struct BlockHeader: Codable {
     let difficultyTarget: Int
 }
 
+/**
+ Struct for computation results that are sent from the miner to the server.
+ */
 struct WorkResult: Codable {
     let jobId: Int
     let clientId: Int
@@ -35,6 +44,9 @@ struct WorkResult: Codable {
     let blockHash: String?
 }
 
+/**
+ Struct to represent the server response after a successful registration of a new client
+ */
 struct RegisterResult: Codable {
     let clientId: Int
     let token: String
