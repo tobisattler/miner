@@ -12,24 +12,81 @@ import CryptoKit
 class ViewController: UIViewController, ServerConnectorObserver {
     @IBOutlet weak var statusLabel: UILabel!
     
+    private var clientId: Int?
+    private var token: String?
+    let server = "mining.sattler.cool"
+    
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        // Attach to the ServerConnector as an Observer
         ServerConnector.shared.attachObserver(observer: self)
-        // Do any additional setup after loading the view.
-        ServerConnector.shared.requestMiningJob()
+        
+        loadAPIToken();
+        guard let _ = clientId, let _ = token else {
+            return
+        }
+        
+        // request a new mining Job
+        ServerConnector.shared.requestMiningJob(token: self.token!)
     }
 
     func miningJobResponse(response: MiningJob) {
-        /*DispatchQueue.main.async {
-            self.statusLabel.text = "previous block hash: \(response.blockHeader.prevBlockHash)"
-        }*/
         startMining(miningJob: response)
     }
     
     func jobResultResonse() {
         // request next mining job
-        ServerConnector.shared.requestMiningJob()
+        ServerConnector.shared.requestMiningJob(token: self.token!)
+    }
+    
+    func registrationResponse(response: RegisterResult) {
+        // Add clientId and token to keystore
+        
+        let userIdAsString = String(response.clientId)
+        let token = response.token.data(using: String.Encoding.utf8)!
+        
+        let query: [String: Any] = [kSecClass as String: kSecClassInternetPassword, kSecAttrAccount as String: userIdAsString, kSecAttrServer as String: server, kSecValueData as String: token]
+        
+        let status = SecItemAdd(query as CFDictionary, nil)
+        guard status == errSecSuccess else {
+            let alert = UIAlertController(title: "Error", message: "Could not add miner credentials to KeyStore.", preferredStyle: .alert)
+            self.present(alert, animated: true)
+            return
+        }
+        
+        self.clientId = response.clientId
+        self.token = response.token
+        
+        // now that we are registered, letss request a mining job
+        ServerConnector.shared.requestMiningJob(token: self.token!)
+    }
+    
+    func loadAPIToken() {
+        let tokenQuery: [String: Any] = [kSecClass as String: kSecClassInternetPassword, kSecAttrServer as String: server, kSecMatchLimit as String: kSecMatchLimitOne, kSecReturnAttributes as String: true, kSecReturnData as String: true]
+        
+        var item: CFTypeRef?
+        let status = SecItemCopyMatching(tokenQuery as CFDictionary, &item)
+        guard status != errSecItemNotFound else {
+            // no token found in keystore yet. Retrieve new token from server
+            ServerConnector.shared.registerClient()
+            return
+        }
+        guard status == errSecSuccess else {
+            let alert = UIAlertController(title: "Error", message: "Could not retrieve miner credentials.", preferredStyle: .alert)
+            self.present(alert, animated: true)
+            return
+        }
+        
+        guard let existingItem = item as? [String: Any], let tokenData = existingItem[kSecValueData as String] as? Data, let token = String(data: tokenData, encoding: String.Encoding.utf8), let clientIdString = existingItem[kSecAttrAccount as String] as? String, let clientId = Int(clientIdString) else {
+            let alert = UIAlertController(title: "Error", message: "Could not retrieve miner credentials from keystore.", preferredStyle: .alert)
+            self.present(alert, animated: true)
+            return
+        }
+        
+        self.clientId = clientId
+        self.token = token
     }
     
     /**
@@ -40,7 +97,7 @@ class ViewController: UIViewController, ServerConnectorObserver {
     func startMining(miningJob: MiningJob){
         let blockHeader = miningJob.blockHeader
         DispatchQueue.main.async {
-            self.statusLabel.text = "Start Mining Job. Merkle Root: \(blockHeader.merkleRoot)"
+            self.statusLabel.text = "Start Mining Job wit id: \(miningJob.jobId)"
         }
         
         // Encode UInt32 values into data object
@@ -71,9 +128,6 @@ class ViewController: UIViewController, ServerConnectorObserver {
             // Perform two rounds of sha265 hashes, using Apple CryptoKit
             let secondRoundDigest = SHA256.hash(data: SHA256.hash(data: headerCopy).suffix(SHA256Digest.byteCount))
             
-            // TODO: REMOVE DEBUGGING
-            //let currentHex = Data(secondRoundDigest.reversed()).hexEncodedString()
-            
             // Check whether the digest has enough leading zero bytes (represented at the end in the bitcoin header format
             let leadingBytesData = secondRoundDigest.suffix(blockHeader.difficultyTarget)
             if let maxValue = leadingBytesData.max(), maxValue == 0 {
@@ -91,14 +145,14 @@ class ViewController: UIViewController, ServerConnectorObserver {
             }
             
             let workResult = WorkResult(jobId: miningJob.jobId, clientId: miningJob.clientId, solutionFound: true, nonce: resultNonce, blockHash: resultHashHex)
-            ServerConnector.shared.sendMiningResponse(workResult: workResult)
+            ServerConnector.shared.sendMiningResponse(token: self.token!, workResult: workResult)
         } else {
             DispatchQueue.main.async {
                 self.statusLabel.text = "no hash found for current work job."
             }
             
             let workResult = WorkResult(jobId: miningJob.jobId, clientId: miningJob.clientId, solutionFound: false, nonce: nil, blockHash: nil)
-            ServerConnector.shared.sendMiningResponse(workResult: workResult)
+            ServerConnector.shared.sendMiningResponse(token: self.token!, workResult: workResult)
         }
         
         

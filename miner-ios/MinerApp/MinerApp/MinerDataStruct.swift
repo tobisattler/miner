@@ -34,3 +34,8 @@ struct WorkResult: Codable {
     let nonce: UInt32?
     let blockHash: String?
 }
+
+struct RegisterResult: Codable {
+    let clientId: Int
+    let token: String
+}

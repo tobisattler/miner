@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		E3D3AF892355BCAA0017506D /* KeychainStruct.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3D3AF882355BCAA0017506D /* KeychainStruct.swift */; };
 		E3EAED4723525F91005CAFCB /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3EAED4623525F91005CAFCB /* AppDelegate.swift */; };
 		E3EAED4923525F91005CAFCB /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3EAED4823525F91005CAFCB /* SceneDelegate.swift */; };
 		E3EAED4B23525F91005CAFCB /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3EAED4A23525F91005CAFCB /* ViewController.swift */; };
@@ -19,6 +20,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		E3D3AF882355BCAA0017506D /* KeychainStruct.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainStruct.swift; sourceTree = "<group>"; };
 		E3EAED4323525F91005CAFCB /* MinerApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MinerApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E3EAED4623525F91005CAFCB /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		E3EAED4823525F91005CAFCB /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -72,6 +74,7 @@
 				E3EAED5A235260C0005CAFCB /* MinerDataStruct.swift */,
 				E3EAED5C23526404005CAFCB /* ServerConnector.swift */,
 				E3EAED5E23526567005CAFCB /* ServerConnectorObserver.swift */,
+				E3D3AF882355BCAA0017506D /* KeychainStruct.swift */,
 			);
 			path = MinerApp;
 			sourceTree = "<group>";
@@ -151,6 +154,7 @@
 				E3EAED4723525F91005CAFCB /* AppDelegate.swift in Sources */,
 				E3EAED5F23526567005CAFCB /* ServerConnectorObserver.swift in Sources */,
 				E3EAED5B235260C0005CAFCB /* MinerDataStruct.swift in Sources */,
+				E3D3AF892355BCAA0017506D /* KeychainStruct.swift in Sources */,
 				E3EAED5D23526404005CAFCB /* ServerConnector.swift in Sources */,
 				E3EAED4923525F91005CAFCB /* SceneDelegate.swift in Sources */,
 			);

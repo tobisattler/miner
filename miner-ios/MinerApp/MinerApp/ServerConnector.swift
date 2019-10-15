@@ -28,14 +28,20 @@ class ServerConnector {
         }
     }
     
+    func notifyRegistrationResponse(registerResult: RegisterResult) {
+        for observer in observers {
+            observer.registrationResponse(response: registerResult)
+        }
+    }
+    
     static let shared = ServerConnector()
     
     private init() {}
     
-    func requestMiningJob() {
+    func requestMiningJob(token: String) {
         let configuration = URLSessionConfiguration.default
         let session = URLSession(configuration: configuration)
-        let url = URL(string: "https://mining.sattler.cool/v1/work")
+        let url = URL(string: "https://mining.sattler.cool/v1/work?token=\(token)")
         var request:URLRequest = URLRequest(url: url!)
         request.httpMethod = "GET"
         
@@ -60,13 +66,14 @@ class ServerConnector {
             case 400:
                 break
             default:
+                print("httpResponse.statusCode: \(httpResponse.statusCode) message: \(String(data: data!, encoding: .utf8)!)")
                 break
             }
         }
         dataTask.resume()
     }
     
-    func sendMiningResponse(workResult: WorkResult) {
+    func sendMiningResponse(token: String, workResult: WorkResult) {
         let jsonEncoder = JSONEncoder()
         var data: Data?
         do {
@@ -79,7 +86,7 @@ class ServerConnector {
         
         let configuration = URLSessionConfiguration.default
         let session = URLSession(configuration: configuration)
-        let url = URL(string: "https://mining.sattler.cool/v1/submit")
+        let url = URL(string: "https://mining.sattler.cool/v1/submit?token=\(token)")
         var request:URLRequest = URLRequest(url: url!)
         request.httpMethod = "POST"
         request.httpBody = data!
@@ -104,6 +111,41 @@ class ServerConnector {
             }
         }
         
+        dataTask.resume()
+    }
+    
+    func registerClient() {
+        let configuration = URLSessionConfiguration.default
+        let session = URLSession(configuration: configuration)
+        let url = URL(string: "https://mining.sattler.cool/v1/register")
+        var request:URLRequest = URLRequest(url: url!)
+        request.httpMethod = "GET"
+        
+        let dataTask = session.dataTask(with: request) { data,response,error in
+            guard let httpResponse = response as? HTTPURLResponse, let receivedData = data
+                else {
+                    print("error: not a valid http response")
+                    return
+            }
+            switch (httpResponse.statusCode) {
+            case 200: //success response.
+                let jsonDecoder = JSONDecoder()
+                do {
+                    let clientDetails: RegisterResult = try jsonDecoder.decode(RegisterResult.self, from: receivedData)
+                    self.notifyRegistrationResponse(registerResult: clientDetails)
+                } catch let error {
+                    // TODO handle error
+                    print(error)
+                }
+                
+                break
+            case 400:
+                break
+            default:
+                print("httpResponse.statusCode: \(httpResponse.statusCode) message: \(String(data: data!, encoding: .utf8)!)")
+                break
+            }
+        }
         dataTask.resume()
     }
 }
