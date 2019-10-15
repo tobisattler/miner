@@ -63,6 +63,10 @@ Server endpoint: https://mining.sattler.cool/v1/submit
 
 Upon receiving result data of a client, the server will mark the corresponding job as finished in the database. The server will then check whether the client found a solution (nonce value and resulting hash transmitted within the data). If that is the case, the solution is stored in the database (the next work request will then result in creating a new puzzle). If the result data does not contain a solution for the puzzle, the server will mark any other jobs in the database with the same nonce-range as finished (if any exist). This is needed to prevent the server from reissuing those jobs again if the highest possible nonce is already part of an issued job.
 
+### Database structure
+
+The structure of the database has been dumped into a .sql file within the database_scheme folder.
+
 ## MinerApp
 
 ### Registration
