@@ -1,0 +1,14 @@
+@charset "ISO-8859-1";
+
+.solutionHeader div, .job div, .jobHeader div, .solution div {
+	display:inline-block;
+	width: 150px;
+}
+
+.solution .blockHash, .solutionHeader .blockHash {
+	width: 550px;
+}
+
+.solution, .solutionHeader, .job, .jobHeader {
+	white-space:nowrap;
+}
