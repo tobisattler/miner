@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Erstellungszeit: 14. Okt 2019 um 22:41
+-- Erstellungszeit: 15. Okt 2019 um 23:08
 -- Server-Version: 10.1.38-MariaDB-0+deb9u1
 -- PHP-Version: 7.0.33-0+deb9u3
 
@@ -120,17 +120,17 @@ ALTER TABLE `solutions`
 -- AUTO_INCREMENT für Tabelle `clients`
 --
 ALTER TABLE `clients`
-  MODIFY `clientId` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `clientId` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT für Tabelle `jobs`
 --
 ALTER TABLE `jobs`
-  MODIFY `jobId` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
+  MODIFY `jobId` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT für Tabelle `puzzles`
 --
 ALTER TABLE `puzzles`
-  MODIFY `puzzleId` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `puzzleId` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT für Tabelle `solutions`
 --
