@@ -15,43 +15,6 @@ import Foundation
  */
 class ServerConnector {
     
-    /*// holds a list of Observers
-    private var observers = [ServerConnectorObserver]()
-    
-    /**
-     Function that observers call in order to register themselves to get notified when there is a result from the server.
-     */
-    func attachObserver(observer: ServerConnectorObserver) {
-        observers.append(observer)
-    }*/
-    
-    /**
-     Notify all observers of a new MiningJob received by the server.
-     */
-    /*func notifyMiningJob(miningJob: MiningJob) {
-        for observer in observers {
-            observer.miningJobResponse(response: miningJob)
-        }
-    }
-    
-    /**
-     Notify all observers that the job result has been successfully sent to the server
-     */
-    func notifyJobResultResponse() {
-        for observer in observers {
-            observer.jobResultResonse()
-        }
-    }
-    
-    /**
-     Notify all observers of the successful creation of a new client and hands over the credentials
-     */
-    func notifyRegistrationResponse(registerResult: RegisterResult) {
-        for observer in observers {
-            observer.registrationResponse(response: registerResult)
-        }
-    }*/
-    
     // holds the actual instance of the ServerConnector
     static let shared = ServerConnector()
     
