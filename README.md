@@ -23,6 +23,8 @@ Here are the server endpoints for API calls:
 - https://mining.sattler.cool/v1/work
 - https://mining.sattler.cool/v1/submit
 
+You can get some basic statistics (last received work results, last solved puzzles) at https://mining.sattler.cool/statistics.php
+
 ## miner-server
 
 The API endpoints of the server are preceeded by v1. This would make it easier to migrate to a new version of the API in the future.
