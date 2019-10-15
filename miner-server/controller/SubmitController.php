@@ -51,7 +51,27 @@ class SubmitController extends AuthenticationController
                 "blockHash" => $blockHash
             ]);
         } else {
-            // TODO: check whether job was a reused job. If so, mark original job as finished
+            // set other jobs with the same parameters (puzzleId, startNonce, endNonce) as finished (if exists).
+            // This is important, if this solved job is a duplicate of another user's job.
+            // This case happens, when the highest possible endNonce has already been reached, but there are still open jobs.
+            
+            // get parameters of the solved job
+            $solvedJob = $this->database->get(Config::TABLE_JOBS, [
+                "puzzleId [Int]",
+                "startNonce [Int]",
+                "endNonce [Int]"
+            ], [
+                
+                "jobId" => $jobId
+            ]);
+            
+            $this->database->update(Config::TABLE_JOBS, [
+                "finished" => true
+            ], [
+                "puzzleId" => $solvedJob["puzzleId"],
+                "startNonce" => $solvedJob["startNonce"],
+                "endNonce" => $solvedJob["endNonce"]
+            ]);
         }
     }
 }

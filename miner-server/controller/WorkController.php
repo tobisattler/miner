@@ -35,16 +35,9 @@ class WorkController extends AuthenticationController {
         if ($this->database->has(Config::TABLE_SOLUTIONS, [
             "puzzleId [Int]" => $latestPuzzle["puzzleId"]    
         ])) {
-            // puzzle has already been solved. Generate new puzzle from Blockchain
-            $puzzle = $this->createPuzzleFromBlockchain();
-            
-            if ($puzzle === false) {
-                $puzzle = $this->createFallbackPuzzle();
-            }
-            
-            if (!is_array($puzzle)) {
-                // TODO: exit with internal server error. Blockchain puzzle and FallbackPuzzle failed
-            }
+         
+            // puzzle has already been solved. Generate new puzzle from Blockchain or Fallback
+            $puzzle = $this->createPuzzle();
             
             $puzzleHeader = $puzzle["puzzleHeader"];
             $puzzleId = $puzzle["puzzleId"];
@@ -64,27 +57,66 @@ class WorkController extends AuthenticationController {
                 $latestPuzzle["difficultyTarget"],
                 $latestPuzzle["nbits"]);
             
-            // get end nonce of last job for the current puzzle
-            $latestJob = $this->database->get(Config::TABLE_JOBS, [
-                "endNonce [Int]"
+            // check if the user still has an unsolved job for the current puzzle. If so, resend that job to the user
+            $oldJob = $this->database->get(Config::TABLE_JOBS, [
+                "jobId [Int]",
+                "clientId [Int]",
+                "puzzleId [Int]",
+                "startNonce [Int]",
+                "endNonce [Int]",
+                "finished [Bool]"
             ], [
                 "puzzleId" => $latestPuzzle["puzzleId"],
-                "ORDER" => ["endNonce" => "DESC"]
+                "clientId" => $this->clientId,
+                "finished" => false,
+                "ORDER" => ["jobId" => "ASC"]
             ]);
             
-            if (isset($latestJob["endNonce"])) {
-                $lastNonce = $latestJob["endNonce"];
+            if (!is_array($oldJob) || !isset($oldJob["jobId"])) {
+                // no unfinished job for this user. Create a new one
                 
-                if ($lastNonce < Config::NONCE_MAX_VALUE) {
-                    // the highest possible nonce value has not yet been reached. Create new puzzle starting with $lastnonce + 1
-                    $miningJob = $this->createMiningJob($latestPuzzleHeader, $latestPuzzle["puzzleId"], $lastNonce+1);
+                // get endNonce of last job for the current puzzle
+                $latestJob = $this->database->get(Config::TABLE_JOBS, [
+                    "endNonce [Int]"
+                ], [
+                    "puzzleId" => $latestPuzzle["puzzleId"],
+                    "ORDER" => ["endNonce" => "DESC"]
+                ]);
+                
+                if (isset($latestJob["endNonce"])) {
+                    $lastNonce = $latestJob["endNonce"];
+                    
+                    if ($lastNonce < Config::NONCE_MAX_VALUE) {
+                        // the highest possible nonce value has not yet been reached. Create new puzzle starting with $lastnonce + 1
+                        $miningJob = $this->createMiningJob($latestPuzzleHeader, $latestPuzzle["puzzleId"], $lastNonce+1);
+                    } else {
+                        // The highest nonce has already been reached, but puzzle has not yet been solved. Duplicate random open job of other users for that puzzle.
+                        
+                        // Check if there is still an unfinished job for this puzzle. If not, create new puzzle.
+                        if ($this->database->has(Config::TABLE_JOBS, [
+                           "puzzleId" => $latestPuzzle["puzzleId"],
+                            "finished" => false
+                        ])) {
+                            $miningJob = $this->duplicateRandomUnfinishedOpenJob($latestPuzzle["puzzleId"], $latestPuzzleHeader);
+                        } else {
+                            $puzzle = $this->createPuzzle();
+                            
+                            $puzzleHeader = $puzzle["puzzleHeader"];
+                            $puzzleId = $puzzle["puzzleId"];
+                            
+                            $miningJob = $this->createMiningJob($puzzleHeader, $puzzleId, 0);
+                        }
+                       
+                    }
                 } else {
-                    // TODO: The highest nonce has already been reached, but puzzle has not yet been solved. Duplicate oldest open job for that puzzle.
+                    // no job for the puzzle yet. Create first job
+                    $miningJob = $this->createMiningJob($latestPuzzleHeader, $latestPuzzle["puzzleId"], 0);
+                    
                 }
             } else {
-                // no job for the puzzle yet. Create first job
-                $miningJob = $this->createMiningJob($latestPuzzleHeader, $latestPuzzle["puzzleId"], 0);
+                // there is still an unfinished job for the user. Resend that one
                 
+                $miningJob = new MiningJob($oldJob["jobId"], $this->clientId, $latestPuzzleHeader, $oldJob["startNonce"], $oldJob["endNonce"]);
             }
             
         }
@@ -94,41 +126,7 @@ class WorkController extends AuthenticationController {
         } else {
             $this->exitWith404Error("unable to create new Job. Sorry!");
         }
-        
-        
-        
-        //TODO: Reenable within the check logic
-        /*$puzzleHeader = $this->createPuzzleFromBlockchain();
-        $miningJob = new MiningJob(1, $this->clientId, $puzzleHeader, 0, Config::NONCES_PER_JOB-1);
-        $this->sendJSONResponse($miningJob->toJSON());
-        exit();*/
-        
-        /*$blockHeader = new BlockHeader(
-            2,
-            "00000000000008a3a41b85b8b29ad444def299fee21793cd8b9e567eab02cd81",
-            "2b12fcf1b09288fcaff797d71e950e71ae42b91e8bdb2304758dfcffc2b620e3",
-            time(),
-            17, 440711666,
-            2504433986);
-        $miningJob = new MiningJob(1, 5, $blockHeader);*/
-        
-        $blockHeader599197 = new BlockHeader(1073725440,
-            "000000000000000000102d45ebfa03cfe54e630d19ef4ffac88a1bc4e146805d",
-            "65df5ef0946129d9a1541ce04a93c0735b1df7b77d87ebff8d2517e6df3c5cab",
-            1570966208, 9, 387294044);
-        $miningJob2 = new MiningJob(2, $this->clientId, $blockHeader599197, 0, Config::NONCES_PER_JOB-1);
-        
-        /*$blockHeader125552 = new BlockHeader(1,
-            "00000000000008a3a41b85b8b29ad444def299fee21793cd8b9e567eab02cd81",
-            "2b12fcf1b09288fcaff797d71e950e71ae42b91e8bdb2304758dfcffc2b620e3",
-            1305998791, 17, 440711666, 2504433986);
-        $miningJob3 = new MiningJob(3, 5, $blockHeader125552);*
-      
-        $this->sendJSONResponse($miningJob3->toJSON());*/
-        
-   
-       // $this->sendJSONResponse($this->createWorkData()->toJSON());
-       $this->sendJSONResponse($miningJob2->toJSON());
+
     }
     
     /**
@@ -136,6 +134,7 @@ class WorkController extends AuthenticationController {
      * @return boolean|mixed[] returns false if something went wrong or an array with the puzzleId and generated BlockHeader object
      */
     private function createPuzzleFromBlockchain() {
+        
         // get info, which block was the last mined. Escpecially the URL for data regarding the last block is needed.
         $blockChainInfo = $this->loadJSONFromURL("https://api.blockcypher.com/v1/btc/main");
         
@@ -197,7 +196,7 @@ class WorkController extends AuthenticationController {
     
     private function createFallbackPuzzle() {
         // get a random old puzzle from the database
-        $puzzleToRecycle = $this->database->rand(Config::TABLE_PUZZLES, [
+        $puzzlesToRecycle = $this->database->rand(Config::TABLE_PUZZLES, [
             "puzzleId [Int]",
             "bitcoinBlockId [Int]",
             "version [Int]",
@@ -208,8 +207,14 @@ class WorkController extends AuthenticationController {
             "difficultyTarget [Int]"
         ]);
         
+        if (!is_array($puzzlesToRecycle) || !isset($puzzlesToRecycle[0])) {
+            $this->exitWith500Error("Could not create new puzzle.");
+        }
+        
+        $puzzleToRecycle = $puzzlesToRecycle[0];
+        
         $nbits = $puzzleToRecycle["nbits"];
-        $timestamp = intval((new \DateTime($puzzleToRecycle["timestamp"], new \DateTimeZone("utc")))->format("U"));
+        $timestamp = $puzzleToRecycle["timestamp"];
         $bitcoinBlockId = $puzzleToRecycle["bitcoinBlockId"];
         $previousBlockHash = $puzzleToRecycle["prevBlockHash"];
         $merkleRoot = $puzzleToRecycle["merkleRoot"];
@@ -232,6 +237,21 @@ class WorkController extends AuthenticationController {
         // create BlockHeader object for new puzzle and return it
         $puzzleHeader = new BlockHeader($version, $previousBlockHash, $merkleRoot, $timestamp, $difficultyBytes, $nbits);
         return array("puzzleId" => $id, "puzzleHeader" => $puzzleHeader);
+    }
+    
+    private function createPuzzle() {
+        $puzzle = $this->createPuzzleFromBlockchain();
+        
+        if ($puzzle === false) {
+            $puzzle = $this->createFallbackPuzzle();
+        }
+        
+        if (!is_array($puzzle)) {
+            // exit with internal server error. Creating Blockchain puzzle and Fallback puzzle failed
+            $this->exitWith500Error("Unable to create new puzzele. I have given up.");
+        }
+        
+        return $puzzle;
     }
     
     private function createMiningJob($blockHeader, $puzzleId, $startNonce) {
@@ -257,56 +277,37 @@ class WorkController extends AuthenticationController {
         return $miningJob;
     }
     
-    private function reuseOldestMiningJob($puzzleId) {
+    private function duplicateRandomUnfinishedOpenJob($puzzleId, $blockHeader) {
+        $jobs = $this->database->rand(Config::TABLE_JOBS,[
+            "jobId [Int]",
+            "clientId [Int]",
+            "puzzleId [Int]",
+            "startNonce [Int]",
+            "endNonce [Int]",
+            "finished [Bool]"
+        ], [
+            "puzzleId" => $puzzleId,
+            "finished" => false
+        ]);
         
-    }
-    
-    private function createWorkData() {
-        // TODO: change this
-        $clientId = 2;
-        $jobId = 1;
-        $version = 4;
-        $difficultyTarget = 16;
-        
-        // get latest data about the Bitcoin blockchain
-        $bcArray = $this->loadJSONFromURL("https://api.blockcypher.com/v1/btc/main");
-        /*print_r($bcArray);
-        exit();*/
-        
-        // if required data fields are not populated, generate fallback data
-        if (!isset($bcArray["previous_hash"]) || !isset($bcArray["previous_url"])) {
-            return $this->generateFallbackData();
+        if (!is_array($jobs) || !isset($jobs[0])) {
+            $this->exitWith500Error("Could not duplicate an existing job");
         }
         
-        // get the last Bitcoin header
-        $previousHeaderArray = $this->loadJSONfromURL($bcArray["previous_url"]);
+        $job = $jobs[0];
         
-        // initialize $nbits with fallback data (value is from Bitcoin block 599230)
-        $nbits = 387294044;
+        // create Job as duplicate in database
+        $this->database->insert(Config::TABLE_JOBS, [
+            "clientId" => $this->clientId,
+            "puzzleId" => $puzzleId,
+            "startNonce" => $job["startNonce"],
+            "endNonce" => $job["endNonce"],
+            "finished" => false
+        ]);
+        $jobId = intval($this->database->id());
         
-        if (isset($previousHeaderArray["bits"])) {
-            // populate the nbits field (i.e. difficulty representation) from last Bitcoin header
-            $nbits = $previousHeaderArray["bits"];
-        }
-        
-        // we will not create a real merkle data, but will use it to differentiate between different users (for every user the extraNonce field in the merkle tree will be different, leading to a different merkleRoot). This is simulated here
-        $merkleRoot = hash("sha256", microtime() . $clientId);
-        
-        $timestamp = time();
-        
-        // create our BlockHeader
-        $blockHeader = new BlockHeader(
-            $version,
-            $bcArray["previous_hash"],
-            $merkleRoot,
-            $timestamp,
-            $difficultyTarget,
-            $nbits,
-            0, 100000);
-        
-        // create Job
-        $miningJob = new MiningJob($jobId, $clientId, $blockHeader);
-        
+        // create new MiningJob Object
+        $miningJob = new MiningJob($jobId, $this->clientId, $blockHeader, $job["startNonce"], $job["endNonce"]);
         return $miningJob;
     }
         
@@ -321,13 +322,4 @@ class WorkController extends AuthenticationController {
         return json_decode($result, true);
     }
     
-    // TODO Rework to have less random data included
-    private function generateFallbackData() {
-        $blockHeader125552 = new BlockHeader(1,
-            hash("sha256", rand()),
-            "2b12fcf1b09288fcaff797d71e950e71ae42b91e8bdb2304758dfcffc2b620e3",
-            1305998791, 17, 440711666, 2504433986);
-        $miningJob3 = new MiningJob(3, 5, $blockHeader125552);
-        return $miningJob3;
-    }
 }

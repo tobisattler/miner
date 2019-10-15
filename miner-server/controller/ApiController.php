@@ -47,4 +47,14 @@ class ApiController {
         echo $errorText;
         exit();
     }
+    
+    /**
+     * Sends an internal Server Error (Code 500) back to the client
+     * @param string $errorText Information about the error.
+     */
+    public function exitWith500Error($errorText) {
+        http_response_code(500);
+        echo $errorText;
+        exit();
+    }
 }
